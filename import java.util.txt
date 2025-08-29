@@ -1,0 +1,60 @@
+import java.util.*;
+
+public class Hotel {
+    private List<Room> rooms = new ArrayList<>();
+    private List<Reservation> reservations = new ArrayList<>();
+
+    public void addRoom(Room room) {
+        rooms.add(room);
+    }
+
+    public List<Room> searchRooms(String category) {
+        List<Room> available = new ArrayList<>();
+        for (Room room : rooms) {
+            if (room.isAvailable() && room.getCategory().equalsIgnoreCase(category)) {
+                available.add(room);
+            }
+        }
+        return available;
+    }
+
+    public Reservation bookRoom(String customerName, String roomId, String checkIn, String checkOut) {
+        for (Room room : rooms) {
+            if (room.getRoomId().equals(roomId) && room.isAvailable()) {
+                String reservationId = "R" + (reservations.size() + 1);
+                Reservation res = new Reservation(reservationId, customerName, roomId, checkIn, checkOut);
+                reservations.add(res);
+                room.setAvailable(false);
+                return res;
+            }
+        }
+        return null;
+    }
+
+    public boolean cancelReservation(String reservationId) {
+        Iterator<Reservation> iterator = reservations.iterator();
+        while (iterator.hasNext()) {
+            Reservation res = iterator.next();
+            if (res.getReservationId().equals(reservationId)) {
+                for (Room room : rooms) {
+                    if (room.getRoomId().equals(res.getRoomId())) {
+                        room.setAvailable(true);
+                        break;
+                    }
+                }
+                iterator.remove();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Reservation viewBooking(String reservationId) {
+        for (Reservation res : reservations) {
+            if (res.getReservationId().equals(reservationId)) {
+                return res;
+            }
+        }
+        return null;
+    }
+}

@@ -1,0 +1,260 @@
+import java.io.*;
+import java.util.*;
+
+// Room class
+class Room {
+    private String roomId;
+    private String category;
+    private double price;
+    private boolean isAvailable;
+
+    public Room(String roomId, String category, double price) {
+        this.roomId = roomId;
+        this.category = category;
+        this.price = price;
+        this.isAvailable = true;
+    }
+
+    public String getRoomId() { return roomId; }
+    public String getCategory() { return category; }
+    public double getPrice() { return price; }
+    public boolean isAvailable() { return isAvailable; }
+    public void setAvailable(boolean available) { isAvailable = available; }
+
+    public String toString() {
+        return roomId + " | " + category + " | ₹" + price + " | " + (isAvailable ? "Available" : "Booked");
+    }
+}
+
+// Reservation class
+class Reservation {
+    private String reservationId;
+    private String customerName;
+    private String roomId;
+    private String checkIn;
+    private String checkOut;
+    private boolean paymentStatus;
+
+    public Reservation(String reservationId, String customerName, String roomId, String checkIn, String checkOut) {
+        this.reservationId = reservationId;
+        this.customerName = customerName;
+        this.roomId = roomId;
+        this.checkIn = checkIn;
+        this.checkOut = checkOut;
+        this.paymentStatus = false;
+    }
+
+    public String getReservationId() { return reservationId; }
+    public String getRoomId() { return roomId; }
+    public void setPaymentStatus(boolean status) { this.paymentStatus = status; }
+
+    public String toString() {
+        return "Reservation ID: " + reservationId + "\nCustomer: " + customerName +
+               "\nRoom: " + roomId + "\nCheck-in: " + checkIn + "\nCheck-out: " + checkOut +
+               "\nPayment: " + (paymentStatus ? "Done" : "Pending");
+    }
+}
+
+// Hotel class
+class Hotel {
+    private List<Room> rooms = new ArrayList<>();
+    private List<Reservation> reservations = new ArrayList<>();
+
+    public void addRoom(Room room) {
+        rooms.add(room);
+    }
+
+    public List<Room> searchRooms(String category) {
+        List<Room> available = new ArrayList<>();
+        for (Room room : rooms) {
+            if (room.isAvailable() && room.getCategory().equalsIgnoreCase(category)) {
+                available.add(room);
+            }
+        }
+        return available;
+    }
+
+    public Reservation bookRoom(String customerName, String roomId, String checkIn, String checkOut) {
+        for (Room room : rooms) {
+            if (room.getRoomId().equals(roomId) && room.isAvailable()) {
+                String reservationId = "R" + (reservations.size() + 1);
+                Reservation res = new Reservation(reservationId, customerName, roomId, checkIn, checkOut);
+                reservations.add(res);
+                room.setAvailable(false);
+                return res;
+            }
+        }
+        return null;
+    }
+
+    public boolean cancelReservation(String reservationId) {
+        Iterator<Reservation> iterator = reservations.iterator();
+        while (iterator.hasNext()) {
+            Reservation res = iterator.next();
+            if (res.getReservationId().equals(reservationId)) {
+                for (Room room : rooms) {
+                    if (room.getRoomId().equals(res.getRoomId())) {
+                        room.setAvailable(true);
+                        break;
+                    }
+                }
+                iterator.remove();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public Reservation viewBooking(String reservationId) {
+        for (Reservation res : reservations) {
+            if (res.getReservationId().equals(reservationId)) {
+                return res;
+            }
+        }
+        return null;
+    }
+
+    public List<Room> getAllRooms() { return rooms; }
+    public List<Reservation> getAllReservations() { return reservations; }
+}
+
+// Payment simulation
+class Payment {
+    public static boolean processPayment(double amount) {
+        System.out.println("Processing payment of ₹" + amount + "...");
+        return true; // Simulate success
+    }
+}
+
+// FileManager for saving/loading
+class FileManager {
+    public static void saveRooms(List<Room> rooms, String filename) throws IOException {
+        BufferedWriter writer = new BufferedWriter(new FileWriter(filename));
+        for (Room room : rooms) {
+            writer.write(room.getRoomId() + "," + room.getCategory() + "," + room.getPrice() + "," + room.isAvailable());
+            writer.newLine();
+        }
+        writer.close();
+    }
+
+    public static List<Room> loadRooms(String filename) throws IOException {
+        List<Room> rooms = new ArrayList<>();
+        File file = new File(filename);
+        if (!file.exists()) return rooms;
+
+        BufferedReader reader = new BufferedReader(new FileReader(filename));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] parts = line.split(",");
+            Room room = new Room(parts[0], parts[1], Double.parseDouble(parts[2]));
+            room.setAvailable(Boolean.parseBoolean(parts[3]));
+            rooms.add(room);
+        }
+        reader.close();
+        return rooms;
+    }
+}
+
+// Main class
+public class HotelReservationSystem {
+    public static void main(String[] args) throws IOException {
+        Scanner sc = new Scanner(System.in);
+        Hotel hotel = new Hotel();
+
+        // Load rooms from file
+        hotel.getAllRooms().addAll(FileManager.loadRooms("rooms.txt"));
+
+        // Add sample rooms if file is empty
+        if (hotel.getAllRooms().isEmpty()) {
+            hotel.addRoom(new Room("101", "Standard", 2000));
+            hotel.addRoom(new Room("102", "Deluxe", 3000));
+            hotel.addRoom(new Room("103", "Suite", 5000));
+        }
+
+        while (true) {
+            System.out.println("\n--- Hotel Reservation System ---");
+            System.out.println("1. View Available Rooms");
+            System.out.println("2. Book a Room");
+            System.out.println("3. Cancel Reservation");
+            System.out.println("4. View Booking Details");
+            System.out.println("5. Exit");
+            System.out.print("Choose option: ");
+            int choice = sc.nextInt();
+            sc.nextLine(); // consume newline
+
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter category (Standard/Deluxe/Suite): ");
+                    String cat = sc.nextLine();
+                    List<Room> available = hotel.searchRooms(cat);
+                    if (available.isEmpty()) {
+                        System.out.println("No rooms available in this category.");
+                    } else {
+                        for (Room room : available) {
+                            System.out.println(room);
+                        }
+                    }
+                    break;
+
+                case 2:
+                    System.out.print("Enter your name: ");
+                    String name = sc.nextLine();
+                    System.out.print("Enter room ID to book: ");
+                    String roomId = sc.nextLine();
+                    System.out.print("Enter check-in date: ");
+                    String checkIn = sc.nextLine();
+                    System.out.print("Enter check-out date: ");
+                    String checkOut = sc.nextLine();
+
+                    Reservation res = hotel.bookRoom(name, roomId, checkIn, checkOut);
+                    if (res != null) {
+                        Room bookedRoom = null;
+                        for (Room r : hotel.getAllRooms()) {
+                            if (r.getRoomId().equals(roomId)) {
+                                bookedRoom = r;
+                                break;
+                            }
+                        }
+                        if (bookedRoom != null && Payment.processPayment(bookedRoom.getPrice())) {
+                            res.setPaymentStatus(true);
+                            System.out.println("Booking successful!\n" + res);
+                        } else {
+                            System.out.println("Payment failed.");
+                        }
+                    } else {
+                        System.out.println("Room not available.");
+                    }
+                    break;
+
+                case 3:
+                    System.out.print("Enter reservation ID to cancel: ");
+                    String resId = sc.nextLine();
+                    if (hotel.cancelReservation(resId)) {
+                        System.out.println("Reservation cancelled.");
+                    } else {
+                        System.out.println("Reservation not found.");
+                    }
+                    break;
+
+                case 4:
+                    System.out.print("Enter reservation ID to view: ");
+                    String viewId = sc.nextLine();
+                    Reservation viewRes = hotel.viewBooking(viewId);
+                    if (viewRes != null) {
+                        System.out.println(viewRes);
+                    } else {
+                        System.out.println("Reservation not found.");
+                    }
+                    break;
+
+                case 5:
+                    FileManager.saveRooms(hotel.getAllRooms(), "rooms.txt");
+                    System.out.println("Data saved. Exiting...");
+                    return;
+
+                default:
+                    System.out.println("Invalid choice.");
+            }
+        }
+    }
+}

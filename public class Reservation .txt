@@ -1,0 +1,21 @@
+public class Reservation {
+    private String reservationId;
+    private String customerName;
+    private String roomId;
+    private String checkIn;
+    private String checkOut;
+    private boolean paymentStatus;
+
+    public Reservation(String reservationId, String customerName, String roomId, String checkIn, String checkOut) {
+        this.reservationId = reservationId;
+        this.customerName = customerName;
+        this.roomId = roomId;
+        this.checkIn = checkIn;
+        this.checkOut = checkOut;
+        this.paymentStatus = false;
+    }
+
+    // Getters and setters
+    public String getReservationId() { return reservationId; }
+    public void setPaymentStatus(boolean status) { this.paymentStatus = status; }
+}
